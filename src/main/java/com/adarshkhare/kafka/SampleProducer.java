@@ -5,29 +5,104 @@
  */
 package com.adarshkhare.kafka;
 
-import java.util.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+
+import java.util.Properties;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
  
 public class SampleProducer {
-    public static void TestProducer(String[] args) {
-        long events = Long.parseLong(args[0]);
-        Random rnd = new Random();
- 
-        Properties props = new Properties();
-        props.put("metadata.broker.list", "broker1:9092,broker2:9092 ");
-        props.put("serializer.class", "kafka.serializer.StringEncoder");
-        props.put("partitioner.class", "SampleProducer.SimplePartitioner");
-        props.put("request.required.acks", "1");
- 
-        try (Producer<String, String> producer = new KafkaProducer<>(props))
+    private static final String SampleTopic  = "testing";
+    private static final String BrokerAddress  = "10.1.1.12:9092";
+
+    private KafkaProducer myProducer;
+
+    public SampleProducer()
+    {
+        try
         {
-            for (long n = 0; n < events; n++) {
-                ProducerRecord data;
-                data = new ProducerRecord<>("my-topic", Long.toString(n), Long.toString(n));
-                producer.send(data);
+            this.myProducer = new KafkaProducer<>(getProducerProperties());
+        }
+        catch (Exception ex)
+        {
+            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Producer Failed", ex);
+        }
+    }
+
+
+
+
+    /**
+     * This simple producer will generate events such
+     *                that each event is a random number.
+     * @param nEvents number of events producer should generate.
+     *
+     */
+    public void SendMessages(long nEvents)
+    {
+        Random rnd = new Random();
+        try
+        {
+            for (long n = 0; n < nEvents; n++) {
+                String messageValue = Long.toString(rnd.nextLong());
+                this.SendMessage(messageValue);
+                Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent");
             }
         }
+        catch (Exception ex)
+        {
+            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Send Failed", ex);
+        }
+    }
+
+    /**
+     * Close the producer.
+     */
+    public void Close()
+    {
+        Producer p = myProducer;
+        if(p != null)
+        {
+            p.close();
+        }
+    }
+
+    private Properties getProducerProperties() {
+        Properties props = new Properties();
+        //Assign localhost id
+        props.put("bootstrap.servers", BrokerAddress);
+
+        //Set acknowledgements for producer requests.
+        props.put("acks", "all");
+
+        //If the request fails, the producer can automatically retry,
+        props.put("retries", 0);
+
+        //Specify buffer size in config
+        props.put("batch.size", 16384);
+
+        //Reduce the no of requests less than 0
+        props.put("linger.ms", 1);
+
+        //The buffer.memory controls the total amount of memory available to the producer for buffering.
+        props.put("buffer.memory", 33554432);
+
+        props.put("key.serializer",
+                "org.apache.kafka.common.serialization.StringSerializer");
+
+        props.put("value.serializer",
+                "org.apache.kafka.common.serialization.StringSerializer");
+        return props;
+    }
+
+
+
+    private void SendMessage(String messageValue) {
+        ProducerRecord message = new ProducerRecord<>(SampleTopic, messageValue, messageValue);
+        this.myProducer.send(message);
+        this.myProducer.flush();
     }
 }
