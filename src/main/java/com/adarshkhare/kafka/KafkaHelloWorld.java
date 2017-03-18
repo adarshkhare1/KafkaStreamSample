@@ -1,8 +1,9 @@
 package com.adarshkhare.kafka;
 
+import org.apache.log4j.BasicConfigurator;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.log4j.BasicConfigurator;
 
 /**
  * Created by adarshkhare on 3/11/17.
@@ -15,7 +16,7 @@ public class KafkaHelloWorld {
         try
         {
             SampleProducer producer = new SampleProducer();
-            producer.SendMessages(10);
+            producer.SendMessages(1);
             producer.Close();
         }
         catch (Exception ex)

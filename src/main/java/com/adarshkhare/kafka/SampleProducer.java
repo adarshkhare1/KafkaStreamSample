@@ -4,27 +4,30 @@
  * and open the template in the editor.
  */
 package com.adarshkhare.kafka;
+import com.google.common.io.Resources;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
  
 public class SampleProducer {
     private static final String SampleTopic  = "testing";
-    private static final String BrokerAddress  = "10.1.1.12:9092";
 
     private KafkaProducer myProducer;
 
     public SampleProducer()
     {
-        try
-        {
-            this.myProducer = new KafkaProducer<>(getProducerProperties());
+        try (InputStream props = Resources.getResource("producer.properties").openStream()) {
+            Properties properties = new Properties();
+            properties.load(props);
+            this.myProducer = new KafkaProducer<>(properties);
         }
         catch (Exception ex)
         {
@@ -47,9 +50,21 @@ public class SampleProducer {
         try
         {
             for (long n = 0; n < nEvents; n++) {
-                String messageValue = Long.toString(rnd.nextLong());
-                this.SendMessage(messageValue);
-                Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent");
+                ProducerRecord messageRecord
+                        = new ProducerRecord<String, String>(SampleProducer.SampleTopic,
+                        Long.toString(n), Long.toString(rnd.nextLong()));
+                Future sendWait = this.myProducer.send(messageRecord);
+                this.myProducer.flush();
+                sendWait.wait(10000);
+                if (sendWait.isDone())
+                {
+                    Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent Successful");
+
+                }
+                else
+                {
+                    Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent Fail");
+                }
             }
         }
         catch (Exception ex)
@@ -70,39 +85,4 @@ public class SampleProducer {
         }
     }
 
-    private Properties getProducerProperties() {
-        Properties props = new Properties();
-        //Assign localhost id
-        props.put("bootstrap.servers", BrokerAddress);
-
-        //Set acknowledgements for producer requests.
-        props.put("acks", "all");
-
-        //If the request fails, the producer can automatically retry,
-        props.put("retries", 0);
-
-        //Specify buffer size in config
-        props.put("batch.size", 16384);
-
-        //Reduce the no of requests less than 0
-        props.put("linger.ms", 1);
-
-        //The buffer.memory controls the total amount of memory available to the producer for buffering.
-        props.put("buffer.memory", 33554432);
-
-        props.put("key.serializer",
-                "org.apache.kafka.common.serialization.StringSerializer");
-
-        props.put("value.serializer",
-                "org.apache.kafka.common.serialization.StringSerializer");
-        return props;
-    }
-
-
-
-    private void SendMessage(String messageValue) {
-        ProducerRecord message = new ProducerRecord<>(SampleTopic, messageValue, messageValue);
-        this.myProducer.send(message);
-        this.myProducer.flush();
-    }
 }
