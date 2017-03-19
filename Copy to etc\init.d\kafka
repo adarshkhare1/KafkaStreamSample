@@ -7,8 +7,10 @@ PATH=$PATH:$DAEMON_PATH
 case "$1" in
   start)
         # Start Kafka
+        echo "Starting Zookeeper";
+        nohup $DAEMON_PATH/bin/zookeeper-server-start.sh $DAEMON_PATH/config/zookeeper.properties > $DAEMON_PATH/kafka.log 2>&1 &
         echo "Starting Kafka";
-        nohup $DAEMON_ROOT/bin/kafka-server-start.sh -daemon /$DAEMON_ROOT/config/server.properties 2> /dev/null
+        nohup $DAEMON_ROOT/bin/kafka-server-start.sh $DAEMON_ROOT/config/server.properties > $DAEMON_PATH/kafka.log 2>&1 &
         ;;
   stop)
         # Stop daemons.
