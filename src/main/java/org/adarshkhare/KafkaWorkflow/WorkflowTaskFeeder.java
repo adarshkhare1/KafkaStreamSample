@@ -1,9 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package com.adarshkhare.kafka;
+package org.adarshkhare.KafkaWorkflow;
+
 import com.google.common.io.Resources;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -17,12 +13,12 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
  
-public class SampleProducer {
-    private static final String SampleTopic  = "testing";
+public class WorkflowTaskFeeder {
+    public static final String SampleTopic  = "MyTestTopic";
 
     private KafkaProducer myProducer;
 
-    public SampleProducer()
+    public WorkflowTaskFeeder()
     {
         try (InputStream props = Resources.getResource("producer.properties").openStream()) {
             Properties properties = new Properties();
@@ -31,7 +27,7 @@ public class SampleProducer {
         }
         catch (Exception ex)
         {
-            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Producer Failed", ex);
+            Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.SEVERE, "Producer Failed", ex);
         }
     }
 
@@ -48,27 +44,26 @@ public class SampleProducer {
     {
         Random rnd = new Random();
         try
-        {
-            for (long n = 0; n < nEvents; n++) {
+        {for (long n = 0; n < nEvents; n++) {
                 ProducerRecord messageRecord
-                        = new ProducerRecord<String, String>(SampleProducer.SampleTopic,
-                        Long.toString(n), Long.toString(n));
+                        = new ProducerRecord<String, String>(WorkflowTaskFeeder.SampleTopic,
+                        Long.toString(n), "Message:"+Long.toString(rnd.nextInt(1000000)));
                 Future sendWait = this.myProducer.send(messageRecord);
                 this.myProducer.flush();
                 if (sendWait.isDone())
                 {
-                    Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent Successful");
+                    Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.INFO, "Message Sent Successful");
 
                 }
                 else
                 {
-                    Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent Fail");
+                    Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.INFO, "Message Sent Fail");
                 }
             }
         }
         catch (Exception ex)
         {
-            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Send Failed", ex.toString());
+            Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.SEVERE, "Send Failed", ex.toString());
         }
     }
 
