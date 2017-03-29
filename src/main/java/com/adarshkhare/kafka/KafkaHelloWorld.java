@@ -1,9 +1,14 @@
 package com.adarshkhare.kafka;
 
 import org.apache.log4j.BasicConfigurator;
+import sun.nio.ch.ThreadPool;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.System.exit;
 
 /**
  * Created by adarshkhare on 3/11/17.
@@ -27,9 +32,11 @@ public class KafkaHelloWorld {
         //Now read all messages from consumer
         SampleConsumer consumer = new SampleConsumer();
         consumer.Subscribe();
-        consumer.run();
-        Thread.sleep(15000);
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        service.submit(consumer);
+        Thread.sleep(10000);
         consumer.shutdown();
+        exit(0);
 
     }
 

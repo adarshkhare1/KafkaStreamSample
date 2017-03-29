@@ -47,16 +47,17 @@ public class SampleConsumer implements Runnable{
     {
         try
         {
-        while (true) {
-            ConsumerRecords<String, String> records = this.myConsumer.poll(Long.MAX_VALUE);
-            for (ConsumerRecord<String, String> record : records) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("partition", record.partition());
-                data.put("offset", record.offset());
-                data.put("value", record.value());
-                System.out.println("Received Data: " + data);
+            while (true)
+            {
+                ConsumerRecords<String, String> records = this.myConsumer.poll(10000);
+                for (ConsumerRecord<String, String> record : records) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("partition", record.partition());
+                    data.put("offset", record.offset());
+                    data.put("value", record.value());
+                    System.out.println("Received Data: " + data);
+                }
             }
-        }
         }
         catch (WakeupException e)
         {
