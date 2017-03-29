@@ -52,10 +52,9 @@ public class SampleProducer {
             for (long n = 0; n < nEvents; n++) {
                 ProducerRecord messageRecord
                         = new ProducerRecord<String, String>(SampleProducer.SampleTopic,
-                        Long.toString(n), Long.toString(rnd.nextLong()));
+                        Long.toString(n), Long.toString(n));
                 Future sendWait = this.myProducer.send(messageRecord);
                 this.myProducer.flush();
-                sendWait.wait(10000);
                 if (sendWait.isDone())
                 {
                     Logger.getLogger(SampleProducer.class.getName()).log(Level.INFO, "Message Sent Successful");
@@ -69,7 +68,7 @@ public class SampleProducer {
         }
         catch (Exception ex)
         {
-            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Send Failed", ex);
+            Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, "Send Failed", ex.toString());
         }
     }
 

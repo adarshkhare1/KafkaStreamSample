@@ -16,13 +16,21 @@ public class KafkaHelloWorld {
         try
         {
             SampleProducer producer = new SampleProducer();
-            producer.SendMessages(1);
+            producer.SendMessages(10);
             producer.Close();
         }
         catch (Exception ex)
         {
             Logger.getLogger(SampleProducer.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        //Now read all messages from consumer
+        SampleConsumer consumer = new SampleConsumer();
+        consumer.Subscribe();
+        consumer.run();
+        Thread.sleep(15000);
+        consumer.shutdown();
+
     }
 
     private static void InitializeLogLevels()
