@@ -1,7 +1,7 @@
 package org.adarshkhare.KafkaWorkFlowTest;
 
-import org.adarshkhare.KafkaWorkflow.WorkflowSupervisor;
-import org.adarshkhare.KafkaWorkflow.WorkflowTaskFeeder;
+import org.adarshkhare.KafkaWorkflow.engine.WorkflowSupervisor;
+import org.adarshkhare.KafkaWorkflow.engine.WorkflowTaskFeeder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

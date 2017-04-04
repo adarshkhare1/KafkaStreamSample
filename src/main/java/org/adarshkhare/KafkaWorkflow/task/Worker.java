@@ -3,9 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.adarshkhare.KafkaWorkflow;
+package org.adarshkhare.KafkaWorkflow.task;
  
 import com.google.common.io.Resources;
+import org.adarshkhare.KafkaWorkflow.engine.WorkflowTaskFeeder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

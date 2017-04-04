@@ -1,4 +1,4 @@
-package org.adarshkhare.KafkaWorkflow;
+package org.adarshkhare.KafkaWorkflow.engine;
 
 import com.google.common.io.Resources;
 
