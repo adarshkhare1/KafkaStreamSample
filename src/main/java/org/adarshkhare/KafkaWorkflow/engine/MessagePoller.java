@@ -3,10 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.adarshkhare.KafkaWorkflow.task;
+package org.adarshkhare.KafkaWorkflow.engine;
  
 import com.google.common.io.Resources;
-import org.adarshkhare.KafkaWorkflow.engine.WorkflowTaskFeeder;
+import org.adarshkhare.KafkaWorkflow.WorkflowTaskFeeder;
+import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -21,28 +22,30 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Worker implements Runnable{
-    private final KafkaConsumer<String,String> myConsumer;
+public class MessagePoller implements Runnable{
+    private final KafkaConsumer<String,ActivityRequest> myConsumer;
     private final String consumerId;
+    private final WorkflowSupervisor parentSupervisor;
 
     //Keep track of number of messages received by this worker.
     private int numMessageReceived;
  
-    public Worker(String id) throws IOException {
+    public MessagePoller(String id, WorkflowSupervisor parent) throws IOException {
         this.consumerId = id;
+        this.parentSupervisor = parent;
         try (InputStream props = Resources.getResource("consumer.properties").openStream())
         {
             Properties properties = new Properties();
             properties.load(props);
             properties.put("group.id", id);
-            this.myConsumer = new KafkaConsumer<String, String>(properties);
+            this.myConsumer = new KafkaConsumer<String, ActivityRequest>(properties);
         }
     }
 
     public void Subscribe()
     {
         this.myConsumer.subscribe(Arrays.asList(WorkflowTaskFeeder.SampleTopic));
-        Logger.getLogger(Worker.class.getName()).log(Level.INFO, this.consumerId+":Subscribed");
+        Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO, this.consumerId+":Subscribed");
     }
 
     @Override
@@ -52,13 +55,14 @@ public class Worker implements Runnable{
         {
             while (true)
             {
-                ConsumerRecords<String, String> records = this.myConsumer.poll(10000);
-                for (ConsumerRecord<String, String> record : records) {
+                ConsumerRecords<String, ActivityRequest> records = this.myConsumer.poll(10000);
+                for (ConsumerRecord<String, ActivityRequest> record : records) {
                     Map<String, Object> data = new HashMap<>();
                     data.put("partition", record.partition());
                     data.put("offset", record.offset());
                     data.put("value", record.value());
-                    Logger.getLogger(Worker.class.getName()).log(Level.INFO, this.consumerId+"-Received: " + data);
+                    Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO, this.consumerId+"-Received: " + data);
+                    this.parentSupervisor.SendMesage(record.value());
                     this.numMessageReceived++;
                 }
             }
@@ -69,7 +73,7 @@ public class Worker implements Runnable{
         }
         finally
         {
-            Logger.getLogger(Worker.class.getName()).log(Level.INFO,
+            Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO,
                     this.consumerId+"- NumMessagesReceived = " + this.numMessageReceived);
                     this.myConsumer.close();
         }

@@ -1,7 +1,8 @@
 package org.adarshkhare.KafkaWorkflow.engine;
 
 import akka.actor.*;
-import org.adarshkhare.KafkaWorkflow.task.Worker;
+import com.google.common.collect.Range;
+import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,82 +12,54 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class WorkflowSupervisor extends UntypedActor
-{
-    public static final ActorRef WorkflowActor;
+import static com.google.common.base.Preconditions.*;
 
+public class WorkflowSupervisor
+{
+    private static final Logger _LOGGER;
     private static final int DEFAULT_POLLER_COUNT = 3;
-    private final Logger _LOGGER;
+
+    public final ActorRef ActivityRouter;
     private final Inbox inbox;
     private final String id ;
-    private final List<Worker> pollers;
+    private final List<MessagePoller> messagePollers;
 
     /*
 	 * Initialize the static members
 	 */
     static
     {
-        ActorSystem wfActorSystem = WorkflowTaskDispatcher.WorkflowActorSystem;
-        WorkflowActor = wfActorSystem.actorOf(Props.create(WorkflowSupervisor.class), "WorkflowSupervisor");
+        _LOGGER = Logger.getLogger(WorkflowSupervisor.class.getName());
     }
 
-
-    private WorkflowSupervisor(String supervisorId, int numPoller)
+    private WorkflowSupervisor(String supervisorId, int requestedNumPollers) throws IOException
     {
-        this._LOGGER = Logger.getLogger(WorkflowSupervisor.class.getName());
-        this.inbox = Inbox.create(WorkflowTaskDispatcher.WorkflowActorSystem);
+        ActorSystem routingSystem = WorkflowMessageRouter.MessageRoutingSystem;
 
-        if(numPoller < 1 || numPoller > 10)
-        {
-            numPoller = DEFAULT_POLLER_COUNT;
-            _LOGGER.log(Level.WARNING,
-                    "numPoller="+numPoller+" are out of range, setting default to "+DEFAULT_POLLER_COUNT);
-        }
-        this.id = supervisorId;
-        this.pollers = new ArrayList<>(numPoller);
-        this.InitializePollers(numPoller);
+        this.id = checkNotNull(supervisorId);
+        this.messagePollers = this.InitializePollers(this.getNumPollers(requestedNumPollers));
+        this.ActivityRouter = routingSystem.actorOf(Props.create(WorkflowSupervisor.class), "WorkflowSupervisor");
+        this.inbox = Inbox.create(routingSystem);
     }
 
-
-
-    public static WorkflowSupervisor CreateSupervisor(String supervisorId)
+    public static WorkflowSupervisor CreateSupervisor(String supervisorId, int numMessagePoller) throws IOException
     {
-        return WorkflowSupervisor.CreateSupervisor(supervisorId, DEFAULT_POLLER_COUNT);
-    }
-
-    public static WorkflowSupervisor CreateSupervisor(String supervisorId, int numMessagePoller)
-    {
-        Logger.getLogger(WorkflowSupervisor.class.getName()).log(Level.INFO, "Initializing Workflow supervisor");
-        Logger.getLogger(WorkflowSupervisor.class.getName()).log(Level.INFO, "supervisorId="+supervisorId);
-        Logger.getLogger(WorkflowSupervisor.class.getName()).log(Level.INFO, "numMessagePoller="+numMessagePoller);
+        _LOGGER.log(Level.INFO, "Initializing Workflow supervisor");
+        _LOGGER.log(Level.INFO, "supervisorId="+supervisorId);
+        _LOGGER.log(Level.INFO, "numMessagePoller="+numMessagePoller);
         WorkflowSupervisor supervisor = new WorkflowSupervisor(supervisorId, numMessagePoller);
         return supervisor;
     }
 
-    @Override
-    public void onReceive(Object message) throws Throwable
+    public static WorkflowSupervisor CreateSupervisor(String supervisorId) throws IOException
     {
-        _LOGGER.entering(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
-
-        inbox.send(WorkflowSupervisor.WorkflowActor, message);
-        try
-        {
-            Object result = inbox.receive(WorkflowTaskDispatcher.DefaultActorTimeout);
-            getSender().tell(result, getSelf());
-        }
-        catch (Exception ex)
-        {
-            unhandled(message);
-            _LOGGER.log(Level.WARNING, "Got a timeout waiting for reply from an actor:"+ex.getMessage());
-        }
-        _LOGGER.exiting(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        return WorkflowSupervisor.CreateSupervisor(supervisorId, DEFAULT_POLLER_COUNT);
     }
-
 
     public void Start()
     {
-        ExecutorService service = Executors.newFixedThreadPool(this.pollers.size());
-        for (Worker poller:this.pollers)
+        ExecutorService service = Executors.newFixedThreadPool(this.messagePollers.size());
+        for (MessagePoller poller:this.messagePollers)
         {
             if(poller != null)
             {
@@ -97,9 +70,25 @@ public class WorkflowSupervisor extends UntypedActor
         }
     }
 
+    public void SendMesage(ActivityRequest req)
+    {
+        _LOGGER.entering(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        Object result = null;
+        try
+        {
+            inbox.send(this.ActivityRouter, req);
+            result = inbox.receive(WorkflowMessageRouter.DefaultActorTimeout);
+        }
+        catch (Exception ex)
+        {
+            _LOGGER.log(Level.WARNING, "Got a timeout waiting for reply from an actor");
+        }
+        _LOGGER.exiting(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+    }
+
     public void Shutdown()
     {
-        for (Worker poller:this.pollers)
+        for (MessagePoller poller:this.messagePollers)
         {
             if(poller != null)
             {
@@ -108,21 +97,39 @@ public class WorkflowSupervisor extends UntypedActor
         }
     }
 
-    private void InitializePollers(int numPoller)
+    private int getNumPollers(int numPoller)
     {
+        Range<Integer> pollerCountRange = Range.closed(1, 10);
+        if(!pollerCountRange.contains(numPoller))
+        {
+            _LOGGER.log(Level.WARNING,
+                    "numPoller="+numPoller+" are out of range, setting default to "+DEFAULT_POLLER_COUNT);
+            return DEFAULT_POLLER_COUNT;
+        }
+        else
+        {
+            return numPoller;
+        }
+    }
+
+    private List<MessagePoller> InitializePollers(int numPoller) throws IOException {
+        List<MessagePoller> pollersList =  new ArrayList<>(numPoller);
         for (int i = 0; i < numPoller; i++)
         {
-            Worker poller = null;
-            try {
-                poller = new Worker(this.id+"-"+i);
-                this.pollers.add(poller);
+            MessagePoller poller = null;
+            try
+            {
+                poller = new MessagePoller(this.id+"-"+i, this);
+                pollersList.add(poller);
             }
-            catch (IOException e) {
+            catch (IOException e)
+            {
                 _LOGGER.log(Level.SEVERE, "Failed to intialize poller");
                 _LOGGER.log(Level.SEVERE, e.toString());
+                throw e;
             }
-            this.pollers.add(poller);
         }
+        return pollersList;
     }
 
 }

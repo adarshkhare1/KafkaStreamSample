@@ -16,14 +16,13 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.10</artifactId>
-            <version>0.10.1.0</version>
+            <version>0.10.2.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka-streams -->
+        <!-- https://mvnrepository.com/artifact/org.apache.kafka/kafka_2.10 -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
-            <version>0.10.1.0</version>
-            <type>jar</type>
+            <artifactId>kafka_2.10</artifactId>
+            <version>0.10.2.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.typesafe.akka/akka-actor_2.11 -->
         <dependency>

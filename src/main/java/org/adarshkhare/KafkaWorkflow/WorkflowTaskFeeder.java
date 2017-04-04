@@ -1,4 +1,4 @@
-package org.adarshkhare.KafkaWorkflow.engine;
+package org.adarshkhare.KafkaWorkflow;
 
 import com.google.common.io.Resources;
 
@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.Random;
@@ -16,18 +17,21 @@ import java.util.logging.Logger;
 public class WorkflowTaskFeeder {
     public static final String SampleTopic  = "MyTestTopic";
 
-    private KafkaProducer myProducer;
+    private final Logger _LOGGER;
+    private final KafkaProducer myProducer;
 
-    public WorkflowTaskFeeder()
+    public WorkflowTaskFeeder() throws IOException
     {
+        _LOGGER =  Logger.getLogger(WorkflowTaskFeeder.class.getName());
         try (InputStream props = Resources.getResource("producer.properties").openStream()) {
             Properties properties = new Properties();
             properties.load(props);
             this.myProducer = new KafkaProducer<>(properties);
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
-            Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.SEVERE, "Producer Failed", ex);
+            _LOGGER.log(Level.SEVERE, "Failed to find config for taskfeeder.", ex);
+            throw ex;
         }
     }
 
@@ -44,7 +48,8 @@ public class WorkflowTaskFeeder {
     {
         Random rnd = new Random();
         try
-        {for (long n = 0; n < nEvents; n++) {
+        {
+            for (long n = 0; n < nEvents; n++) {
                 ProducerRecord messageRecord
                         = new ProducerRecord<String, String>(WorkflowTaskFeeder.SampleTopic,
                         Long.toString(n), "Message:"+Long.toString(rnd.nextInt(1000000)));
@@ -52,18 +57,19 @@ public class WorkflowTaskFeeder {
                 this.myProducer.flush();
                 if (sendWait.isDone())
                 {
-                    Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.INFO, "Message Sent Successful");
+                    _LOGGER.log(Level.INFO, "Message Sent Successful");
 
                 }
                 else
                 {
-                    Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.INFO, "Message Sent Fail");
+                    _LOGGER.log(Level.INFO, "Message Sent Fail");
                 }
             }
         }
         catch (Exception ex)
         {
-            Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.SEVERE, "Send Failed", ex.toString());
+            _LOGGER.log(Level.SEVERE, "Send Failed", ex.toString());
+            throw ex;
         }
     }
 

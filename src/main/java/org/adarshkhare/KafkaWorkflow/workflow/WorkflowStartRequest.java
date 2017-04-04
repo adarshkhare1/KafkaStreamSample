@@ -1,8 +1,17 @@
 package org.adarshkhare.KafkaWorkflow.workflow;
 
-/**
- * Created by adkhare on 4/3/2017.
- */
 public class WorkflowStartRequest
 {
+    private final String workFlowId;
+
+    public WorkflowStartRequest(String id)
+    {
+        this.workFlowId = id;
+    }
+
+    public String getWorkFlowId()
+    {
+        return workFlowId;
+    }
+
 }
