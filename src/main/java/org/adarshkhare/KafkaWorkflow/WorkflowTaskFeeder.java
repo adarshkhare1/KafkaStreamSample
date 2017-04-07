@@ -12,7 +12,8 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
  
-public class WorkflowTaskFeeder {
+public class WorkflowTaskFeeder 
+{
     public static final String SampleTopic  = "MyTestTopic-workflow";
 
     private final Logger _LOGGER;
