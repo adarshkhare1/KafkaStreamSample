@@ -9,9 +9,10 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
- 
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class WorkflowTaskFeeder {
     public static final String SampleTopic  = "MyTestTopic-workflow";
 
@@ -22,7 +23,7 @@ public class WorkflowTaskFeeder {
     //private static final SpecificDatumWriter<Event> avroEventWriter = new SpecificDatumWriter<Event>(Event.SCHEMA$);
     public WorkflowTaskFeeder() throws IOException
     {
-        _LOGGER =  Logger.getLogger(WorkflowTaskFeeder.class.getName());
+        _LOGGER =  LogManager.getLogger(WorkflowTaskFeeder.class.getName());
         try (InputStream props = Resources.getResource("producer.properties").openStream()) {
             Properties properties = new Properties();
             properties.load(props);
@@ -30,7 +31,7 @@ public class WorkflowTaskFeeder {
         }
         catch (IOException ex)
         {
-            _LOGGER.log(Level.SEVERE, "Failed to find config for taskfeeder.", ex);
+            _LOGGER.fatal("Failed to find config for taskfeeder.", ex);
             throw ex;
         }
     }
@@ -58,9 +59,9 @@ public class WorkflowTaskFeeder {
                     public void onCompletion(RecordMetadata recordMetadata, Exception e)
                     {
                         if (e != null) {
-                            _LOGGER.log(Level.INFO, "Message Sent Fail : %s", e);
+                            _LOGGER.fatal("Message Sent Fail : %s", e);
                         }
-                        _LOGGER.log(Level.INFO, "Message Sent Successful");
+                        _LOGGER.info( "Message Sent Successful");
                     }
                 });
                 this.myProducer.flush();
@@ -68,7 +69,7 @@ public class WorkflowTaskFeeder {
         }
         catch (Exception ex)
         {
-            _LOGGER.log(Level.SEVERE, "Send Failed", ex.toString());
+            _LOGGER.fatal(ex);
             throw ex;
         }
     }

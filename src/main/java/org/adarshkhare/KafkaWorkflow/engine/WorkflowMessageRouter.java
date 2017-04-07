@@ -3,14 +3,14 @@ package org.adarshkhare.KafkaWorkflow.engine;
 import org.adarshkhare.KafkaWorkflow.activity.BaseWorkflowActivity;
 import org.adarshkhare.KafkaWorkflow.activity.TestActivity1;
 import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class WorkflowMessageRouter
 {
@@ -26,20 +26,20 @@ public class WorkflowMessageRouter
     static
     {
         DefaultActorTimeout = Duration.create(15, TimeUnit.SECONDS);
-        _LOGGER = Logger.getLogger(WorkflowMessageRouter.class.getName());
+        _LOGGER = LogManager.getLogger(WorkflowMessageRouter.class.getName());
         activityMap = new HashMap<String, BaseWorkflowActivity>();
     }
 
     public void RouteMessageToWorker(Object message)
     {
-        _LOGGER.entering(WorkflowMessageRouter.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        _LOGGER.traceEntry();
         Object result = null;
         try
         {
             if (message instanceof ActivityRequest)
             {
                 ActivityRequest req = (ActivityRequest) message;
-                _LOGGER.log(Level.INFO, "Finding the actor for "+req.getActivityId());
+                _LOGGER.info("Finding the actor for "+req.getActivityId());
                 BaseWorkflowActivity activity = this.getActivityActor(req);
                 if (activity != null)
                 {
@@ -49,10 +49,10 @@ public class WorkflowMessageRouter
         }
         catch (Exception ex)
         {
-            _LOGGER.log(Level.WARNING, "Exception when activity processing the message:" + ex.getMessage());
+            _LOGGER.warn("Exception when activity processing the message:" + ex.getMessage());
             throw ex;
         }
-        _LOGGER.exiting(WorkflowMessageRouter.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        _LOGGER.traceExit();
     }
 
     private synchronized BaseWorkflowActivity getActivityActor(ActivityRequest req)
@@ -65,7 +65,7 @@ public class WorkflowMessageRouter
             String actorKey = TaskId+":"+activityId;
             if (activityMap.containsKey(actorKey))
             {
-                _LOGGER.log(Level.INFO, String.format("Found actor for %s", actorKey));
+                _LOGGER.info(String.format("Found actor for %s", actorKey));
                 activity = activityMap.get(actorKey);
             }
             else
