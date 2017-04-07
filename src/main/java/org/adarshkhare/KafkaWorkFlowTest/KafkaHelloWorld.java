@@ -15,21 +15,21 @@ public class KafkaHelloWorld
 {
     public static void main(String[] args) throws Exception
     {
-        //BasicConfigurator.configure();
+        int nMessages = 5;
         //Now launch supervisor to process messages
-        WorkflowSupervisor supervisor = WorkflowSupervisor.CreateSupervisor("TestSupervisor", 3);
+        WorkflowSupervisor supervisor = WorkflowSupervisor.CreateSupervisor("WorkflowSupervisor", 3);
         supervisor.Start();
-        KafkaHelloWorld.FeedMessagesToWorkflow();
-        Thread.sleep(1000);
+        KafkaHelloWorld.FeedMessagesToWorkflow(nMessages);
+        Thread.sleep(10000+nMessages*100);
         supervisor.Shutdown();
         exit(0);
     }
 
-    private static void FeedMessagesToWorkflow() {
+    private static void FeedMessagesToWorkflow(int nMessages) {
         try
         {
             WorkflowTaskFeeder taskFeeder = new WorkflowTaskFeeder();
-            taskFeeder.SendMessages(5);
+            taskFeeder.SendMessages(nMessages);
             taskFeeder.Close();
         }
         catch (Exception ex)

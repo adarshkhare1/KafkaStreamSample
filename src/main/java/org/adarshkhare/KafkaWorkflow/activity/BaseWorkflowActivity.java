@@ -1,9 +1,7 @@
 package org.adarshkhare.KafkaWorkflow.activity;
 
 
-import akka.actor.UntypedActor;
-
-public abstract class BaseWorkflowActivity extends UntypedActor
+public abstract class BaseWorkflowActivity
 {
     protected final String activityName;
 
@@ -11,5 +9,7 @@ public abstract class BaseWorkflowActivity extends UntypedActor
     {
         this.activityName = name;
     }
+
+    public abstract void onReceive(Object message);
 
 }

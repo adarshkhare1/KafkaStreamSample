@@ -1,10 +1,8 @@
 package org.adarshkhare.KafkaWorkflow;
 
 import com.google.common.io.Resources;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
+import org.apache.kafka.clients.producer.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,11 +13,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
  
 public class WorkflowTaskFeeder {
-    public static final String SampleTopic  = "MyTestTopic";
+    public static final String SampleTopic  = "MyTestTopic-workflow";
 
     private final Logger _LOGGER;
     private final KafkaProducer myProducer;
 
+    public static final String USER_SCHEMA = "";
+    //private static final SpecificDatumWriter<Event> avroEventWriter = new SpecificDatumWriter<Event>(Event.SCHEMA$);
     public WorkflowTaskFeeder() throws IOException
     {
         _LOGGER =  Logger.getLogger(WorkflowTaskFeeder.class.getName());
@@ -35,9 +35,6 @@ public class WorkflowTaskFeeder {
         }
     }
 
-
-
-
     /**
      * This simple producer will generate events such
      *                that each event is a random number.
@@ -49,21 +46,24 @@ public class WorkflowTaskFeeder {
         Random rnd = new Random();
         try
         {
-            for (long n = 0; n < nEvents; n++) {
+            for (long n = 0; n < nEvents; n++)
+            {
+                ActivityRequest activity = new ActivityRequest(Long.toString(n));
+                activity.setPayload(Long.toString(rnd.nextInt()));
                 ProducerRecord messageRecord
-                        = new ProducerRecord<String, String>(WorkflowTaskFeeder.SampleTopic,
-                        Long.toString(n), "Message:"+Long.toString(rnd.nextInt(1000000)));
-                Future sendWait = this.myProducer.send(messageRecord);
+                        = new ProducerRecord<>(WorkflowTaskFeeder.SampleTopic,
+                        Long.toString(n), activity);
+                Future sendWait = this.myProducer.send(messageRecord, new Callback() {
+                    @Override
+                    public void onCompletion(RecordMetadata recordMetadata, Exception e)
+                    {
+                        if (e != null) {
+                            _LOGGER.log(Level.INFO, "Message Sent Fail : %s", e);
+                        }
+                        _LOGGER.log(Level.INFO, "Message Sent Successful");
+                    }
+                });
                 this.myProducer.flush();
-                if (sendWait.isDone())
-                {
-                    _LOGGER.log(Level.INFO, "Message Sent Successful");
-
-                }
-                else
-                {
-                    _LOGGER.log(Level.INFO, "Message Sent Fail");
-                }
             }
         }
         catch (Exception ex)

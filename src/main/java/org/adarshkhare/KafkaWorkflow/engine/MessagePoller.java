@@ -22,13 +22,23 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class MessagePoller implements Runnable{
+public class MessagePoller implements Runnable
+{
+    private static final Logger _LOGGER;
     private final KafkaConsumer<String,ActivityRequest> myConsumer;
     private final String consumerId;
     private final WorkflowSupervisor parentSupervisor;
 
     //Keep track of number of messages received by this worker.
     private int numMessageReceived;
+
+    /*
+	 * Initialize the static members
+	 */
+    static
+    {
+        _LOGGER = Logger.getLogger(MessagePoller.class.getName());
+    }
  
     public MessagePoller(String id, WorkflowSupervisor parent) throws IOException {
         this.consumerId = id;
@@ -45,7 +55,7 @@ public class MessagePoller implements Runnable{
     public void Subscribe()
     {
         this.myConsumer.subscribe(Arrays.asList(WorkflowTaskFeeder.SampleTopic));
-        Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO, this.consumerId+":Subscribed");
+        _LOGGER.log(Level.INFO, this.consumerId+":Subscribed");
     }
 
     @Override
@@ -60,22 +70,25 @@ public class MessagePoller implements Runnable{
                     Map<String, Object> data = new HashMap<>();
                     data.put("partition", record.partition());
                     data.put("offset", record.offset());
-                    data.put("value", record.value());
-                    Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO, this.consumerId+"-Received: " + data);
+                    data.put("value", record.value().toString());
+                    _LOGGER.log(Level.INFO, this.consumerId+"-Received: " + data);
                     this.parentSupervisor.SendMesage(record.value());
                     this.numMessageReceived++;
                 }
             }
         }
-        catch (WakeupException e)
+        catch (WakeupException ex)
         {
-            // ignore for shutdown
+            //Ignore for shutdown
+        }
+        catch (Exception ex)
+        {
+            _LOGGER.log(Level.WARNING, this.consumerId+"-Exceptiom: " + ex);
         }
         finally
         {
-            Logger.getLogger(MessagePoller.class.getName()).log(Level.INFO,
-                    this.consumerId+"- NumMessagesReceived = " + this.numMessageReceived);
-                    this.myConsumer.close();
+            _LOGGER.log(Level.INFO,this.consumerId+"- NumMessagesReceived = " + this.numMessageReceived);
+            this.myConsumer.close();
         }
     }
 

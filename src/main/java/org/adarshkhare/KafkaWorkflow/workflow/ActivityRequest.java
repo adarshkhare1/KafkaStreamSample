@@ -4,12 +4,14 @@ import java.util.UUID;
 
 public class ActivityRequest
 {
-
-
-    private final String parentTaskId;
-    private final String activityId;
+    private String parentTaskId;
+    private String activityId;
     private String payload;
 
+    public ActivityRequest()
+    {
+
+    }
     public ActivityRequest(String taskId)
     {
         this.parentTaskId = taskId;
@@ -20,17 +22,24 @@ public class ActivityRequest
     {
         return parentTaskId;
     }
+    public void setParentTaskId(String parentTaskId) { this.parentTaskId = parentTaskId;}
 
     public String getActivityId()
     {
         return activityId;
     }
+    public void setActivityId(String activityId) { this.activityId = activityId; }
 
     public String getPayload() {
         return payload;
     }
-
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "parentTaskId=" + parentTaskId + ", activityId=" + activityId + ", payload=" + payload + "]";
     }
 }

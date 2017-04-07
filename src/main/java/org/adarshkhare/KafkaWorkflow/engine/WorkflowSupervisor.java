@@ -1,6 +1,5 @@
 package org.adarshkhare.KafkaWorkflow.engine;
 
-import akka.actor.*;
 import com.google.common.collect.Range;
 import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
 
@@ -12,17 +11,16 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class WorkflowSupervisor
 {
     private static final Logger _LOGGER;
     private static final int DEFAULT_POLLER_COUNT = 3;
 
-    public final ActorRef ActivityRouter;
-    private final Inbox inbox;
     private final String id ;
     private final List<MessagePoller> messagePollers;
+    private final WorkflowMessageRouter messageRouter;
 
     /*
 	 * Initialize the static members
@@ -34,12 +32,9 @@ public class WorkflowSupervisor
 
     private WorkflowSupervisor(String supervisorId, int requestedNumPollers) throws IOException
     {
-        ActorSystem routingSystem = WorkflowMessageRouter.MessageRoutingSystem;
-
         this.id = checkNotNull(supervisorId);
         this.messagePollers = this.InitializePollers(this.getNumPollers(requestedNumPollers));
-        this.ActivityRouter = routingSystem.actorOf(Props.create(WorkflowSupervisor.class), "WorkflowSupervisor");
-        this.inbox = Inbox.create(routingSystem);
+        this.messageRouter = new WorkflowMessageRouter();
     }
 
     public static WorkflowSupervisor CreateSupervisor(String supervisorId, int numMessagePoller) throws IOException
@@ -64,7 +59,6 @@ public class WorkflowSupervisor
             if(poller != null)
             {
                 poller.Subscribe();
-
                 service.submit(poller);
             }
         }
@@ -76,8 +70,8 @@ public class WorkflowSupervisor
         Object result = null;
         try
         {
-            inbox.send(this.ActivityRouter, req);
-            result = inbox.receive(WorkflowMessageRouter.DefaultActorTimeout);
+            this.messageRouter.RouteMessageToWorker(req);
+            _LOGGER.log(Level.INFO, "Message send to router for processing.");
         }
         catch (Exception ex)
         {
@@ -113,7 +107,7 @@ public class WorkflowSupervisor
     }
 
     private List<MessagePoller> InitializePollers(int numPoller) throws IOException {
-        List<MessagePoller> pollersList =  new ArrayList<>(numPoller);
+        List<MessagePoller> pollersList =  new ArrayList<MessagePoller>(numPoller);
         for (int i = 0; i < numPoller; i++)
         {
             MessagePoller poller = null;
