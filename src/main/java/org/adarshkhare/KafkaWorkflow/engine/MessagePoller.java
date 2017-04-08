@@ -19,8 +19,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MessagePoller implements Runnable
 {
@@ -37,7 +38,7 @@ public class MessagePoller implements Runnable
 	 */
     static
     {
-        _LOGGER = Logger.getLogger(MessagePoller.class.getName());
+        _LOGGER = LogManager.getLogger(MessagePoller.class.getName());
     }
  
     public MessagePoller(String id, WorkflowSupervisor parent) throws IOException {
@@ -55,7 +56,7 @@ public class MessagePoller implements Runnable
     public void Subscribe()
     {
         this.myConsumer.subscribe(Arrays.asList(WorkflowTaskFeeder.SampleTopic));
-        _LOGGER.log(Level.INFO, this.consumerId+":Subscribed");
+        _LOGGER.info(this.consumerId+":Subscribed");
     }
 
     @Override
@@ -71,7 +72,7 @@ public class MessagePoller implements Runnable
                     data.put("partition", record.partition());
                     data.put("offset", record.offset());
                     data.put("value", record.value().toString());
-                    _LOGGER.log(Level.INFO, this.consumerId+"-Received: " + data);
+                    _LOGGER.info(this.consumerId+"-Received: " + data);
                     this.parentSupervisor.SendMesage(record.value());
                     this.numMessageReceived++;
                 }
@@ -83,11 +84,11 @@ public class MessagePoller implements Runnable
         }
         catch (Exception ex)
         {
-            _LOGGER.log(Level.WARNING, this.consumerId+"-Exceptiom: " + ex);
+            _LOGGER.warn( this.consumerId+"-Exceptiom: " + ex);
         }
         finally
         {
-            _LOGGER.log(Level.INFO,this.consumerId+"- NumMessagesReceived = " + this.numMessageReceived);
+            _LOGGER.warn(this.consumerId+"- NumMessagesReceived = " + this.numMessageReceived);
             this.myConsumer.close();
         }
     }

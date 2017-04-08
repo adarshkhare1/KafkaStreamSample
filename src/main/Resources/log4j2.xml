@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <File name="file" fileName="app.log">
+            <PatternLayout>
+                <Pattern>[%p] %d{MM-dd-yyyy HH:mm:ss,SSS} %c %M - %m%n</Pattern>
+            </PatternLayout>
+        </File>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout>
+                <Pattern>[%p] %d{MM-dd-yyyy HH:mm:ss,SSS} %c %M - %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="info" additivity="false">
+            <appender-ref ref="console" />
+        </Root>
+    </Loggers>
+</Configuration>

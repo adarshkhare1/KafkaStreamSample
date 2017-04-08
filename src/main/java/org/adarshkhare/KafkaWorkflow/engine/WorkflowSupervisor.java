@@ -2,14 +2,14 @@ package org.adarshkhare.KafkaWorkflow.engine;
 
 import com.google.common.collect.Range;
 import org.adarshkhare.KafkaWorkflow.workflow.ActivityRequest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -27,7 +27,7 @@ public class WorkflowSupervisor
 	 */
     static
     {
-        _LOGGER = Logger.getLogger(WorkflowSupervisor.class.getName());
+        _LOGGER = LogManager.getLogger(WorkflowSupervisor.class.getName());
     }
 
     private WorkflowSupervisor(String supervisorId, int requestedNumPollers) throws IOException
@@ -39,9 +39,9 @@ public class WorkflowSupervisor
 
     public static WorkflowSupervisor CreateSupervisor(String supervisorId, int numMessagePoller) throws IOException
     {
-        _LOGGER.log(Level.INFO, "Initializing Workflow supervisor");
-        _LOGGER.log(Level.INFO, "supervisorId="+supervisorId);
-        _LOGGER.log(Level.INFO, "numMessagePoller="+numMessagePoller);
+        _LOGGER.info("Initializing Workflow supervisor");
+        _LOGGER.info("supervisorId="+supervisorId);
+        _LOGGER.info("numMessagePoller="+numMessagePoller);
         WorkflowSupervisor supervisor = new WorkflowSupervisor(supervisorId, numMessagePoller);
         return supervisor;
     }
@@ -66,18 +66,18 @@ public class WorkflowSupervisor
 
     public void SendMesage(ActivityRequest req)
     {
-        _LOGGER.entering(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        _LOGGER.traceEntry();
         Object result = null;
         try
         {
             this.messageRouter.RouteMessageToWorker(req);
-            _LOGGER.log(Level.INFO, "Message send to router for processing.");
+            _LOGGER.info("Message send to router for processing.");
         }
         catch (Exception ex)
         {
-            _LOGGER.log(Level.WARNING, "Got a timeout waiting for reply from an actor");
+            _LOGGER.info("Got a timeout waiting for reply from an actor");
         }
-        _LOGGER.exiting(WorkflowSupervisor.class.getName(), Thread.currentThread().getStackTrace()[0].getMethodName());
+        _LOGGER.traceExit();
     }
 
     public void Shutdown()
@@ -96,8 +96,7 @@ public class WorkflowSupervisor
         Range<Integer> pollerCountRange = Range.closed(1, 10);
         if(!pollerCountRange.contains(numPoller))
         {
-            _LOGGER.log(Level.WARNING,
-                    "numPoller="+numPoller+" are out of range, setting default to "+DEFAULT_POLLER_COUNT);
+            _LOGGER.warn("numPoller="+numPoller+" are out of range, setting default to "+DEFAULT_POLLER_COUNT);
             return DEFAULT_POLLER_COUNT;
         }
         else
@@ -118,8 +117,8 @@ public class WorkflowSupervisor
             }
             catch (IOException e)
             {
-                _LOGGER.log(Level.SEVERE, "Failed to intialize poller");
-                _LOGGER.log(Level.SEVERE, e.toString());
+                _LOGGER.fatal( "Failed to intialize poller");
+                _LOGGER.fatal(e.toString());
                 throw e;
             }
         }

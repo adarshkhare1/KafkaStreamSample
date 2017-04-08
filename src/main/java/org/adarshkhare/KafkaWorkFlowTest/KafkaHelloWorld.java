@@ -3,8 +3,8 @@ package org.adarshkhare.KafkaWorkFlowTest;
 import org.adarshkhare.KafkaWorkflow.WorkflowTaskFeeder;
 import org.adarshkhare.KafkaWorkflow.engine.WorkflowSupervisor;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import static java.lang.System.exit;
 
@@ -15,9 +15,9 @@ public class KafkaHelloWorld
 {
     public static void main(String[] args) throws Exception
     {
-        int nMessages = 5;
+        int nMessages = 1;
         //Now launch supervisor to process messages
-        WorkflowSupervisor supervisor = WorkflowSupervisor.CreateSupervisor("WorkflowSupervisor", 3);
+        WorkflowSupervisor supervisor = WorkflowSupervisor.CreateSupervisor("WorkflowSupervisor", 1);
         supervisor.Start();
         KafkaHelloWorld.FeedMessagesToWorkflow(nMessages);
         Thread.sleep(10000+nMessages*100);
@@ -34,7 +34,7 @@ public class KafkaHelloWorld
         }
         catch (Exception ex)
         {
-            Logger.getLogger(WorkflowTaskFeeder.class.getName()).log(Level.SEVERE, null, ex);
+            LogManager.getLogger(KafkaHelloWorld.class.getName()).fatal(ex);
         }
     }
 }
